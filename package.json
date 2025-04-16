@@ -1,5 +1,6 @@
 {
-  "description": "Tools for repo-wide maintenance.",
+  "name": "codex-openllm",
+  "description": "Codex CLI fork with pluggable LLM backends like Ollama or OpenAI",
   "scripts": {
     "release": "cd codex-cli && npm run release",
     "format": "prettier --check *.json *.md .github/workflows/*.yml",
