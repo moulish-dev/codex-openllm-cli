@@ -2,13 +2,16 @@
 
 import type { AppRollout } from "./app";
 import type { ApprovalPolicy } from "./approvals";
-import type { CommandConfirmation } from "./utils/agent/agent-loop";
+import { CommandConfirmation } from "./utils/agent/agent-loop";
+import { AgentLoop } from "./utils/agent/agent-loop";
 import type { AppConfig } from "./utils/config";
-import type { ResponseItem } from "openai/resources/responses/responses";
+// import type { ResponseItem } from "openai/resources/responses/responses";
+import type { ResponseItem } from "../../src/types/response";
+  
 
 import App from "./app";
 import { runSinglePass } from "./cli_singlepass";
-import { AgentLoop } from "./utils/agent/agent-loop";
+// import { AgentLoop } from "./utils/agent/agent-loop";
 import { initLogger } from "./utils/agent/log";
 import { ReviewDecision } from "./utils/agent/review";
 import { AutoApprovalMode } from "./utils/auto-approval-mode";
@@ -138,21 +141,22 @@ if (cli.flags.help) {
 // ---------------------------------------------------------------------------
 // API key handling
 // ---------------------------------------------------------------------------
+const apiKey = "ollama_local";
 
-const apiKey = process.env["OPENAI_API_KEY"];
+// const apiKey = process.env["OPENAI_API_KEY"];
 
-if (!apiKey) {
-  // eslint-disable-next-line no-console
-  console.error(
-    `\n${chalk.red("Missing OpenAI API key.")}\n\n` +
-      `Set the environment variable ${chalk.bold("OPENAI_API_KEY")} ` +
-      `and re-run this command.\n` +
-      `You can create a key here: ${chalk.bold(
-        chalk.underline("https://platform.openai.com/account/api-keys"),
-      )}\n`,
-  );
-  process.exit(1);
-}
+// if (!apiKey) {
+//   // eslint-disable-next-line no-console
+//   console.error(
+//     `\n${chalk.red("Missing OpenAI API key.")}\n\n` +
+//       `Set the environment variable ${chalk.bold("OPENAI_API_KEY")} ` +
+//       `and re-run this command.\n` +
+//       `You can create a key here: ${chalk.bold(
+//         chalk.underline("https://platform.openai.com/account/api-keys"),
+//       )}\n`,
+//   );
+//   process.exit(1);
+// }
 
 const fullContextMode = Boolean(cli.flags.fullContext);
 let config = loadConfig(undefined, undefined, {
@@ -172,16 +176,20 @@ config = {
   model: model ?? config.model,
 };
 
-if (!(await isModelSupportedForResponses(config.model))) {
-  // eslint-disable-next-line no-console
-  console.error(
-    `The model "${config.model}" does not appear in the list of models ` +
-      `available to your account. Double‑check the spelling (use\n` +
-      `  openai models list\n` +
-      `to see the full list) or choose another model with the --model flag.`,
-  );
-  process.exit(1);
-}
+//------------------------------
+// SKIPPING MODEL VALIDATION
+// ------------------------------
+
+// if (!(await isModelSupportedForResponses(config.model))) {
+//   // eslint-disable-next-line no-console
+//   console.error(
+//     `The model "${config.model}" does not appear in the list of models ` +
+//       `available to your account. Double‑check the spelling (use\n` +
+//       `  openai models list\n` +
+//       `to see the full list) or choose another model with the --model flag.`,
+//   );
+//   process.exit(1);
+// }
 
 let rollout: AppRollout | undefined;
 
@@ -347,14 +355,15 @@ async function runQuietMode({
     onLoading: () => {
       /* intentionally ignored in quiet mode */
     },
-    getCommandConfirmation: (
-      _command: Array<string>,
-    ): Promise<CommandConfirmation> => {
-      return Promise.resolve({ review: ReviewDecision.NO_CONTINUE });
-    },
-    onLastResponseId: () => {
-      /* intentionally ignored in quiet mode */
-    },
+    //------- THIS IS REMOVED AS RESPONSE TRACKING COMMAND CONFIRMATION IS YET NOT IMPLEMENTED
+    // getCommandConfirmation: (
+    //   _command: Array<string>,
+    // ): Promise<CommandConfirmation> => {
+    //   return Promise.resolve({ review: ReviewDecision.NO_CONTINUE });
+    // },
+    // onLastResponseId: () => {
+    //   /* intentionally ignored in quiet mode */
+    // },  
   });
 
   const inputItem = await createInputItem(prompt, imagePaths);

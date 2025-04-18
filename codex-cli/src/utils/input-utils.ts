@@ -1,31 +1,18 @@
-import type { ResponseInputItem } from "openai/resources/responses/responses";
+import type { ResponseInputItem } from "../../../src/types/response";
 
-import { fileTypeFromBuffer } from "file-type";
-import fs from "fs/promises";
-
+/**
+ * Creates a text-based input item compatible with the AgentLoop.
+ *
+ * @param text - The prompt text to send as input.
+ * @param _images - Currently unused; reserved for future image support.
+ * @returns A `ResponseInputItem` object with input text.
+ */
 export async function createInputItem(
   text: string,
-  images: Array<string>,
-): Promise<ResponseInputItem.Message> {
-  const inputItem: ResponseInputItem.Message = {
-    role: "user",
-    content: [{ type: "input_text", text }],
-    type: "message",
+  _images: Array<string>, // kept for future extensibility
+): Promise<ResponseInputItem> {
+  return {
+    type: "input_text",
+    text,
   };
-
-  for (const filePath of images) {
-    /* eslint-disable no-await-in-loop */
-    const binary = await fs.readFile(filePath);
-    const kind = await fileTypeFromBuffer(binary);
-    /* eslint-enable no-await-in-loop */
-    const encoded = binary.toString("base64");
-    const mime = kind?.mime ?? "application/octet-stream";
-    inputItem.content.push({
-      type: "input_image",
-      detail: "auto",
-      image_url: `data:${mime};base64,${encoded}`,
-    });
-  }
-
-  return inputItem;
 }

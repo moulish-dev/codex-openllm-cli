@@ -1,11 +1,19 @@
+/* OPENLLM LOGIC
+ */
+import { loadClient } from "../../../src/openllm/loadClient";
+// OLLAMA
+import { AgentLoop } from "../utils/agent/agent-loop"; // your Ollama version
+import type { ResponseItem, ResponseInputItem } from "../../../src/types/response";
+import type { AppConfig } from "../utils/config";
+
 /* eslint-disable no-await-in-loop */
 
-import type { AppConfig } from "../utils/config";
+// import type { AppConfig } from "../utils/config";
 import type { FileOperation } from "../utils/singlepass/file_ops";
 
 import Spinner from "./vendor/ink-spinner"; // Third‑party / vendor components
 import TextInput from "./vendor/ink-text-input";
-import { OPENAI_TIMEOUT_MS, OPENAI_BASE_URL } from "../utils/config";
+// import { OPENAI_TIMEOUT_MS, OPENAI_BASE_URL } from "../utils/config";
 import {
   generateDiffSummary,
   generateEditSummary,
@@ -20,8 +28,8 @@ import { EditedFilesSchema } from "../utils/singlepass/file_ops";
 import * as fsSync from "fs";
 import * as fsPromises from "fs/promises";
 import { Box, Text, useApp, useInput } from "ink";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+// import OpenAI from "openai";
+// import { zodResponseFormat } from "openai/helpers/zod";
 import path from "path";
 import React, { useEffect, useState, useRef } from "react";
 
@@ -380,68 +388,125 @@ export function SinglePassApp({
 
   /* -------------------------------- Helpers -------------------------------- */
 
-  async function runSinglePassTask(userPrompt: string) {
-    setPrompt(userPrompt);
-    setShowSpinner(true);
-    setState("thinking");
+  // async function runSinglePassTask(userPrompt: string) {
+  //   setPrompt(userPrompt);
+  //   setShowSpinner(true);
+  //   setState("thinking");
 
-    try {
-      const taskContextStr = renderTaskContext({
-        prompt: userPrompt,
-        input_paths: [rootPath],
-        input_paths_structure: "(omitted for brevity in single pass mode)",
-        files,
-      });
+    
 
-      const openai = new OpenAI({
-        apiKey: config.apiKey ?? "",
-        baseURL: OPENAI_BASE_URL || undefined,
-        timeout: OPENAI_TIMEOUT_MS,
-      });
-      const chatResp = await openai.beta.chat.completions.parse({
-        model: config.model,
-        messages: [
-          {
-            role: "user",
-            content: taskContextStr,
-          },
-        ],
-        response_format: zodResponseFormat(EditedFilesSchema, "schema"),
-      });
+  //     const llm = loadClient();
+  //     console.log("🧪 Testing prompt with Ollama...");
+  //     const rawResponse1 = await llm.prompt("Write a Python function to reverse a string");
+  //     console.log("🔁 Response from Ollama:", rawResponse1);
+  //     process.exit(0); // exit after showing test result
 
-      const edited = chatResp.choices[0]?.message?.parsed ?? null;
 
-      setShowSpinner(false);
+  //     const taskContextStr = renderTaskContext({
+  //       prompt: userPrompt,
+  //       input_paths: [rootPath],
+  //       input_paths_structure: "(omitted for brevity in single pass mode)",
+  //       files,
+  //     });
 
-      if (!edited || !Array.isArray(edited.ops)) {
-        setState("noops");
-        return;
-      }
+  //     const rawResponse = await llm.prompt(taskContextStr);
 
-      const originalMap: Record<string, string> = {};
-      for (const fc of files) {
-        originalMap[fc.path] = fc.content;
-      }
+  //     // Parse response (assume JSON or schema-based, depending on Ollama output)
+  //     let parsedResponse: any;
+  //     try {
+  //       parsedResponse = JSON.parse(rawResponse);
+  //     } catch (err) {
+  //       console.error("⚠️ Failed to parse Ollama response:", rawResponse);
+  //       setState("error");
+  //       return;
+  //     }
 
-      const [combinedDiffs, opsToApply] = generateDiffSummary(
-        edited,
-        originalMap,
-      );
+  //     // You can adapt this depending on how your LLM formats the response
+  //     const edited = parsedResponse.choices?.[0]?.message?.parsed ?? parsedResponse;
 
-      if (!opsToApply.length) {
-        setState("noops");
-        return;
-      }
+  //     if (!edited || !Array.isArray(edited.ops)) {
+  //       setState("noops");
+  //       return;
+  //     }
 
-      const summary = generateEditSummary(opsToApply, originalMap);
-      setDiffInfo({ summary, diffs: combinedDiffs, ops: opsToApply });
-      setApplyOps(opsToApply);
-      setState("confirm");
-    } catch (err) {
-      setShowSpinner(false);
-      setState("error");
-    }
+
+  //     // const edited = chatResp.choices[0]?.message?.parsed ?? null;
+
+  //     setShowSpinner(false);
+
+  //     if (!edited || !Array.isArray(edited.ops)) {
+  //       setState("noops");
+  //       return;
+  //     }
+
+  //     const originalMap: Record<string, string> = {};
+  //     for (const fc of files) {
+  //       originalMap[fc.path] = fc.content;
+  //     }
+
+  //     const [combinedDiffs, opsToApply] = generateDiffSummary(
+  //       edited,
+  //       originalMap,
+  //     );
+
+  //     if (!opsToApply.length) {
+  //       setState("noops");
+  //       return;
+  //     }
+
+  //     const summary = generateEditSummary(opsToApply, originalMap);
+  //     setDiffInfo({ summary, diffs: combinedDiffs, ops: opsToApply });
+  //     setApplyOps(opsToApply);
+  //     setState("confirm");
+  //   } catch (err) {
+  //     setShowSpinner(false);
+  //     setState("error");
+  //   }
+  // }
+
+  // ---------------------------------
+  // OLLAMA
+  
+
+  async function runSinglePassTask({
+    prompt,
+    config,
+  }: {
+    prompt: string;
+    config: AppConfig;
+  }) {
+    const inputItems: ResponseInputItem[] = [
+      {
+        type: "input_text",
+        text: prompt,
+      },
+    ];
+
+    const agent = new AgentLoop({
+      config,
+      model: config.model ?? "mistral", // default model
+      onItem: (item: ResponseItem) => {
+        if (item.type === "message") {
+          console.log(`\n🔁 Response [${item.role}]:`);
+          for (const content of item.content) {
+            if (content.type === "output_text" || content.type === "input_text") {
+              console.log(content.text);
+            }
+          }
+        } else {
+          console.log(`ℹ️ Received item of type "${item.type}" (not a message).`);
+        }
+      },
+      
+      onLoading: (loading: boolean) => {
+        if (loading) console.log("⏳ Thinking...");
+      },
+    });
+
+    await agent.run(inputItems);
   }
+
+  // ---------------------------------
 
   async function applyFileOps(ops: Array<FileOperation>) {
     for (const op of ops) {
@@ -522,7 +587,7 @@ export function SinglePassApp({
   if (state === "error") {
     return (
       <Box flexDirection="column">
-        <Text color="red">Error calling OpenAI API.</Text>
+        <Text color="red">Error calling Ollama API.</Text>
         <ContinuePrompt
           onResult={(cont) => {
             if (!cont) {
@@ -586,7 +651,7 @@ export function SinglePassApp({
         <Box borderStyle="round" flexDirection="column" paddingX={1} width={80}>
           <Text>
             <Text bold color="magenta">
-              OpenAI <Text bold>Codex</Text>
+              Ollama <Text bold>Codex</Text>
             </Text>{" "}
             <Text dimColor>(full context mode)</Text>
           </Text>
@@ -625,7 +690,7 @@ export function SinglePassApp({
                 return;
               }
 
-              runSinglePassTask(val);
+              runSinglePassTask({prompt: val, config});
             }}
             onCtrlC={() => {
               setState("interrupted");
