@@ -97,7 +97,7 @@
  */
 
 // Hardcoded list of locally known supported models
-export const RECOMMENDED_MODELS: Array<string> = ["codellama", "deepseek-coder", "mistral", "llama2"];
+export const RECOMMENDED_MODELS: Array<string> = ["codellama", "deepseek-coder","deepseek-coder:1.5b" , "mistral", "llama2"];
 
 // Skip preload logic (Ollama doesn't need to fetch anything upfront)
 export function preloadModels(): void {
