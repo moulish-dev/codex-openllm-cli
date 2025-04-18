@@ -1,4 +1,4 @@
-```markdown
+
 # 🧠 Codex OpenLLM CLI
 
 A blazing-fast, terminal-first AI coding assistant powered by **Ollama**, with full offline model support. Built as a simplified alternative to the OpenAI Codex CLI, this tool provides natural language coding capabilities via locally running LLMs like `mistral`, `llama2`, `codellama`, and more.
